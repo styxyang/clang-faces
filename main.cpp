@@ -185,9 +185,10 @@ std::vector<CXCursor>
 my_annotateTokens(CXTranslationUnit tu, CXToken *tokens,
                   unsigned token_count)
 {
+    // Store the cursor corresponding to n'th token
     std::vector<CXCursor> cursors(token_count);
     for (auto n = 0u; n < token_count; ++n) {
-        auto location = clang_getTokenLocation(tu, tokens[ n ]);
+        auto location = clang_getTokenLocation(tu, tokens[n]);
         cursors[n] = (clang_getCursor(tu, location));
     }
 
@@ -217,9 +218,8 @@ void TokenizeSource(CXTranslationUnit tu)
 
     for (auto t = 0u; t < token_count; ++t) {
         auto tkind = clang_getTokenKind(tokens[t]);
-        auto tspelling = tkind == CXToken_Identifier ?
-                CursorKindSpelling(cursors[ t ]) :
-                TokenKindSpelling(tkind);
+        auto tspelling = (tkind == CXToken_Identifier) ?
+                CursorKindSpelling(cursors[t]) : TokenKindSpelling(tkind);
         auto textent = clang_getTokenExtent(tu, tokens[t]);
         auto tstartloc = clang_getRangeStart(textent);
         auto tendloc = clang_getRangeEnd(textent);
