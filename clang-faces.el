@@ -73,7 +73,7 @@
   :group 'clang-faces)
 
 (defface clang-faces-type-face
-  '((t :inherit font-lock-type-face))
+  '((t :inherit default))
   ""
   :group 'clang-faces)
 
@@ -223,6 +223,7 @@ region."
     (with-current-buffer srcbuf
       (when (and (eq clang-faces-status 'idle)
 		 clang-faces-hilight-request-queue)
+	;; if current clang-faces is idle and has request pending
 					;(message "Reparse request!")
 	(setq clang-faces-status 'busy)
 	;;(setq clang-faces-last-tick (buffer-modified-tick))
@@ -238,31 +239,31 @@ region."
   (with-current-buffer (process-buffer process)
     (let ((srcbuf clang-faces-current-buffer)
 	  (off (progn
-		(goto-char (point-max))
-		(insert output)
-		(goto-char (point-min))
-		(search-forward-regexp
-		 clang-faces-output-finished-regexp (point-max) t))))
+		 (goto-char (point-max))
+		 (insert output)
+		 (goto-char (point-min))
+		 (search-forward-regexp
+		  clang-faces-output-finished-regexp (point-max) t))))
 
-     (if off (with-current-buffer srcbuf
-	       (setq clang-faces-status 'idle)
-	       (clang-faces-parse-incoming-data process)
-	      
-	       (clang-faces-on-hilight-returns process)
+      (if off (with-current-buffer srcbuf
+		(setq clang-faces-status 'idle)
+		(clang-faces-parse-incoming-data process)
+		
+		(clang-faces-on-hilight-returns process)
 
-	       (if clang-faces-hilight-request-queue
-		   (progn
-		     (clang-faces-request-hilight-worker process))
-		 (save-excursion
-		   (message (format "Current buffer: %s\nFormatting buffer: %s"  
-				    
-				    (or (current-buffer) "") 
-				    (or srcbuf "")))
-		   (font-lock-fontify-region (or clang-faces-delta-beg
-						 (point-min))
-					     (or clang-faces-delta-end
-						 (point-min)))))))
-     t)))
+		(if clang-faces-hilight-request-queue
+		    (progn
+		      (clang-faces-request-hilight-worker process))
+		  (save-excursion
+		    (message (format "Current buffer: %s\nFormatting buffer: %s"  
+				     
+				     (or (current-buffer) "") 
+				     (or srcbuf "")))
+		    (font-lock-fontify-region (or clang-faces-delta-beg
+						  (point-min))
+					      (or clang-faces-delta-end
+						  (point-min)))))))
+      t)))
 
 (defun clang-faces-get-process-parent-buffer (proc)
   (when proc
@@ -286,8 +287,7 @@ region."
 	 (file (or (buffer-file-name)
 		   (concat default-directory (buffer-name buf))))
 	 (outbuf (generate-new-buffer-name "clang-faces"))
-	 (cmdargs (append ac-clang-cflags
-			  (list file))))
+	 (cmdargs (append (list file))))
     (message (format "Launching clang-faces with args: %s" 
 		     (mapconcat 'identity cmdargs " ")))
     (setq clang-faces-process
@@ -319,7 +319,7 @@ region."
   ;; 				       clang-faces-min-point)))
   ;;   (message (format "Point = %d Min = %d" (point) clang-faces-min-point))
   ;;   )
-  ;(setq clang-faces-parsed-data (clang-faces-adjust-delta))
+					;(setq clang-faces-parsed-data (clang-faces-adjust-delta))
   )
 
 (defun clang-faces-request-hilight ()
@@ -327,6 +327,7 @@ region."
 	 (end (or clang-faces-delta-end (point-max)))
 	 (entry (list beg end))
 	 (proc clang-faces-process))
+					; append the delta region to request queue
     (setq clang-faces-hilight-request-queue
 	  (append clang-faces-hilight-request-queue
 		  (list entry)))
@@ -527,7 +528,7 @@ region."
 		  (null arg)
 		  (called-interactively-p 'any))
 	     (not (called-interactively-p 'any))
-	     arg)
+	     arg) ; presumably `t', so force enable
 	 (clang-faces-mode-enable))
 	(t
 	 (clang-faces-mode-disable))))
