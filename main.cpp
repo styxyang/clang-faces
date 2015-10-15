@@ -32,7 +32,7 @@
 
 #include "clang-c/Index.h"
 
-#define DEBUG 1
+/* #define DEBUG 1 */
 
 const auto end_pattern = "!!!!$$$$!!!!";
 
