@@ -42,21 +42,16 @@ include_directories(
 message(STATUS "LLVM LIB DIR: ${LLVM_LIBRARY_DIRS}")
 
 link_directories( 
-${LLVM_LIBRARY_DIRS}
-${CLANG_LIBRARY_LIBS}
-)
+  ${LLVM_LIBRARY_DIRS}
+  ${CLANG_LIBRARY_LIBS}
+  )
 
-add_executable( 
-${PROJECT_NAME}
-
-main.cpp
-#${ALL_SRC}
-)
+add_executable(${PROJECT_NAME} main.cpp utils.cpp)
 
 target_link_libraries( ${PROJECT_NAME} 
-${LLVM_LIBNAMES}
-${CLANG_LIBS} 
-)
+  ${LLVM_LIBNAMES}
+  ${CLANG_LIBS} 
+  )
 
 add_definitions(
   ${LLVM_CFLAGS}
@@ -64,16 +59,12 @@ add_definitions(
   -std=c++11
   )
 
-add_executable( 
-sniper
-
-sniper.cpp
-)
+add_executable(sniper sniper.cpp)
 
 target_link_libraries( sniper
-${LLVM_LIBNAMES}
-${CLANG_LIBS} 
-)
+  ${LLVM_LIBNAMES}
+  ${CLANG_LIBS} 
+  )
 
 add_definitions(
   ${LLVM_CFLAGS}

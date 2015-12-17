@@ -23,33 +23,40 @@
  * Created: Tue Jul 18:55:32 KST 2013
  * Last modified: Thu Aug 15 23:53:20 KST 2013
  */
+#include "utils.h"
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <string>
 #include <iterator>
+#include <tuple>
 #include <memory>
+
+#include <getopt.h>
 
 #include "clang-c/Index.h"
 
-/* #define DEBUG 1 */
+// #define DEBUG 1
+// #define DEBUG 0
 
 const auto end_pattern = "!!!!$$$$!!!!";
+const auto MAX_OPT_LEN = 512;
 
 std::string TokenKindSpelling(CXTokenKind kind)
 {
     switch(kind) {
-        case CXToken_Punctuation: return "Punctuation";
+	case CXToken_Punctuation: return "Punctuation";
 
-        case CXToken_Keyword: return "Keyword";
+	case CXToken_Keyword: return "Keyword";
 
-        case CXToken_Identifier: return "Identifier";
+	case CXToken_Identifier: return "Identifier";
 
-        case CXToken_Literal: return "Literal";
+	case CXToken_Literal: return "Literal";
 
-        case CXToken_Comment: return "Comment";
-        default:
-            break;
+	case CXToken_Comment: return "Comment";
+	default:
+	    break;
     }
     return {};
 }
@@ -75,8 +82,8 @@ std::ostream& operator<<(std::ostream &os, CXCursor cursor)
 
     auto refcursor = clang_getCursorReferenced(cursor);
     if (clang_equalCursors(refcursor, clang_getNullCursor())||
-        clang_equalCursors(refcursor, cursor))
-        return os;
+	clang_equalCursors(refcursor, cursor))
+	return os;
 
     return os << " [ " << refcursor << " ] ";
 }
@@ -121,7 +128,7 @@ CallExprVisitor(CXCursor cursor, CXCursor parent, CXClientData d)
     std::cout << "Child of CallExpr = " << cursor << "\n";
 
     if (cursor.kind == CXCursor_TypeRef)
-        *result = "Identifier";
+	*result = "Identifier";
     //    *result = "Variable";
 
     return CXChildVisit_Break;
@@ -133,10 +140,10 @@ std::string AdvancedCallExprHandler(CXCursor cursor)
     std::string result = "Function";
 
     if (newcursor.kind == CXCursor_Constructor)
-        result = "Identifier";
+	result = "Identifier";
     else
-        clang_visitChildren(cursor, CallExprVisitor,
-                            reinterpret_cast<std::string *>(&result));
+	clang_visitChildren(cursor, CallExprVisitor,
+			    reinterpret_cast<std::string *>(&result));
     return result;
 }
 
@@ -147,35 +154,35 @@ std::string CursorKindSpelling(CXCursor cursor)
     CXCursor newcursor;
 
     switch(kind) {
-        case CXCursor_DeclRefExpr:
-        case CXCursor_MemberRefExpr:
-            newcursor = clang_getCursorReferenced(cursor);
-            std::cout << "NEW CURSOR: " << newcursor << "\n";
-            return CursorKindSpelling(newcursor);
+	case CXCursor_DeclRefExpr:
+	case CXCursor_MemberRefExpr:
+	    newcursor = clang_getCursorReferenced(cursor);
+	    std::cout << "NEW CURSOR: " << newcursor << "\n";
+	    return CursorKindSpelling(newcursor);
 
-        case CXCursor_CallExpr:
-            return AdvancedCallExprHandler(cursor);
+	case CXCursor_CallExpr:
+	    return AdvancedCallExprHandler(cursor);
 
-        case CXCursor_CXXMethod:
-        case CXCursor_FunctionDecl:
-        case CXCursor_Constructor:
-        case CXCursor_Destructor:
-        case CXCursor_OverloadedDeclRef:
-            return "Function";
+	case CXCursor_CXXMethod:
+	case CXCursor_FunctionDecl:
+	case CXCursor_Constructor:
+	case CXCursor_Destructor:
+	case CXCursor_OverloadedDeclRef:
+	    return "Function";
 
-        case CXCursor_ParmDecl:
-        case CXCursor_VarDecl:
-        case CXCursor_FieldDecl:
-        case CXCursor_MemberRef:
-        case CXCursor_VariableRef:
-        case CXCursor_NonTypeTemplateParameter:
-            return "Variable";
+	case CXCursor_ParmDecl:
+	case CXCursor_VarDecl:
+	case CXCursor_FieldDecl:
+	case CXCursor_MemberRef:
+	case CXCursor_VariableRef:
+	case CXCursor_NonTypeTemplateParameter:
+	    return "Variable";
 
-        case CXCursor_NamespaceRef:
-            return "Namespace";
+	case CXCursor_NamespaceRef:
+	    return "Namespace";
 
-        default:
-            return "Identifier";
+	default:
+	    return "Identifier";
     }
 
     return {};
@@ -183,13 +190,13 @@ std::string CursorKindSpelling(CXCursor cursor)
 
 std::vector<CXCursor>
 my_annotateTokens(CXTranslationUnit tu, CXToken *tokens,
-                  unsigned token_count)
+		  unsigned token_count)
 {
     // Store the cursor corresponding to n'th token
     std::vector<CXCursor> cursors(token_count);
     for (auto n = 0u; n < token_count; ++n) {
-        auto location = clang_getTokenLocation(tu, tokens[n]);
-        cursors[n] = (clang_getCursor(tu, location));
+	auto location = clang_getTokenLocation(tu, tokens[n]);
+	cursors[n] = (clang_getCursor(tu, location));
     }
 
     return cursors;
@@ -199,7 +206,7 @@ void TokenizeSource(CXTranslationUnit tu)
 {
     // Get the source code range referenced by the cursor
     CXSourceRange range =
-            clang_getCursorExtent(clang_getTranslationUnitCursor(tu));
+	    clang_getCursorExtent(clang_getTranslationUnitCursor(tu));
 
     CXToken *tokens;
     unsigned int token_count;
@@ -208,8 +215,8 @@ void TokenizeSource(CXTranslationUnit tu)
     // the given range into raw lexical tokens
     clang_tokenize(tu, range, &tokens, &token_count);
     if (DEBUG) {
-        std::cout << __PRETTY_FUNCTION__
-                  << "\n\t" << "Total number of tokens: " << token_count << "\n";
+	std::cout << __PRETTY_FUNCTION__
+		  << "\n\t" << "Total number of tokens: " << token_count << "\n";
     }
 
     //CXCursor cursors[ token_count ];
@@ -217,64 +224,64 @@ void TokenizeSource(CXTranslationUnit tu)
     auto cursors = my_annotateTokens(tu, tokens, token_count);
 
     for (auto t = 0u; t < token_count; ++t) {
-        auto tkind = clang_getTokenKind(tokens[t]);
-        auto tspelling = (tkind == CXToken_Identifier) ?
-                CursorKindSpelling(cursors[t]) : TokenKindSpelling(tkind);
-        auto textent = clang_getTokenExtent(tu, tokens[t]);
-        auto tstartloc = clang_getRangeStart(textent);
-        auto tendloc = clang_getRangeEnd(textent);
+	auto tkind = clang_getTokenKind(tokens[t]);
+	auto tspelling = (tkind == CXToken_Identifier) ?
+		CursorKindSpelling(cursors[t]) : TokenKindSpelling(tkind);
+	auto textent = clang_getTokenExtent(tu, tokens[t]);
+	auto tstartloc = clang_getRangeStart(textent);
+	auto tendloc = clang_getRangeEnd(textent);
 
-        auto tokspell = clang_getTokenSpelling(tu, tokens[ t ]);
-        std::cout << "TokenSpelling: " << tokspell << "\n";
-        std::cout << "Cursor: " << cursors[ t ] << "\n";
+	auto tokspell = clang_getTokenSpelling(tu, tokens[ t ]);
+	std::cout << "TokenSpelling: " << tokspell << "\n";
+	std::cout << "Cursor: " << cursors[ t ] << "\n";
 
-        // if (!(cursors[t].kind >= CXCursor_FirstInvalid &&
-        //          cursors[t].kind <= CXCursor_LastInvalid)) {
-        //   auto rr = clang_getCursorExtent(cursors[ t ]);
-        //   std::cout << "Range: " << rr << "\n";
-        // }
+	// if (!(cursors[t].kind >= CXCursor_FirstInvalid &&
+	//          cursors[t].kind <= CXCursor_LastInvalid)) {
+	//   auto rr = clang_getCursorExtent(cursors[ t ]);
+	//   std::cout << "Range: " << rr << "\n";
+	// }
 
-        // std::cout << clang_getCursorDisplayName(cursors[ t ]) << "\n";
-        // std::cout << "USR: " << clang_getCursorUSR(cursors[ t ]) << "\n";
+	// std::cout << clang_getCursorDisplayName(cursors[ t ]) << "\n";
+	// std::cout << "USR: " << clang_getCursorUSR(cursors[ t ]) << "\n";
 
-        unsigned int startoffset, endoffset;
-        clang_getSpellingLocation(tstartloc, nullptr, nullptr, nullptr, &startoffset);
-        clang_getSpellingLocation(tendloc, nullptr, nullptr, nullptr, &endoffset);
+	unsigned int startoffset, endoffset;
+	clang_getSpellingLocation(tstartloc, nullptr, nullptr, nullptr, &startoffset);
+	clang_getSpellingLocation(tendloc, nullptr, nullptr, nullptr, &endoffset);
 
-        // TODO: testing this hack for int -> identifier instead of keyword
-        // but this loses const to an identifier also! fvck!
-        if (tspelling == "Keyword") {
-            auto type = clang_getCursorType(cursors[ t ]);
-            auto typekind = type.kind;
-            CXString typespelling;
+	// TODO: testing this hack for int -> identifier instead of keyword
+	// but this loses const to an identifier also! fvck!
+	if (tspelling == "Keyword") {
+	    auto type = clang_getCursorType(cursors[ t ]);
+	    auto typekind = type.kind;
+	    CXString typespelling;
 
-            if (cursors[t].kind == CXCursor_FunctionDecl ||
-                cursors[t].kind == CXCursor_CXXMethod) {
-                type = clang_getResultType(type);
-                typekind = type.kind;
-                typespelling = clang_getTypeSpelling(type);
-            }
-            else
-                typespelling = clang_getTypeSpelling(type);
+	    if (cursors[t].kind == CXCursor_FunctionDecl ||
+		cursors[t].kind == CXCursor_CXXMethod) {
+		type = clang_getResultType(type);
+		typekind = type.kind;
+		typespelling = clang_getTypeSpelling(type);
+	    }
+	    else
+		typespelling = clang_getTypeSpelling(type);
 
-            // std::cout << "Type = " << type << " kind: " << typekind << "\n";
-            // std::cout << clang_getCString(typespelling) << " <-> " << clang_getCString(tokspell) << "\n";
-            // std::cout << " Const? " << clang_isConstQualifiedType(type) << "\n";
+	    // std::cout << "Type = " << type << " kind: " << typekind << "\n";
+	    // std::cout << clang_getCString(typespelling) << " <-> " << clang_getCString(tokspell) << "\n";
+	    // std::cout << " Const? " << clang_isConstQualifiedType(type) << "\n";
 
-            if (((typekind >= CXType_FirstBuiltin && typekind <= CXType_LastBuiltin) &&
-                 (std::string(clang_getCString(typespelling)) ==
-                  std::string(clang_getCString(tokspell)))) ||
-                //         (cursors[t].kind == CXCursor_VarDecl) ||
-                (cursors[t].kind == CXCursor_ParmDecl))
-                tspelling = "Identifier";
-        }
+	    if (((typekind >= CXType_FirstBuiltin && typekind <= CXType_LastBuiltin) &&
+		 (std::string(clang_getCString(typespelling)) ==
+		  std::string(clang_getCString(tokspell)))) ||
+		//         (cursors[t].kind == CXCursor_VarDecl) ||
+		(cursors[t].kind == CXCursor_ParmDecl))
+		tspelling = "Identifier";
+	}
 
-        //if (tspelling != "Punctuation")
-        std::cout
-                << startoffset << ":" << endoffset << " @ "
-                << tspelling  << "\n";
+	//if (tspelling != "Punctuation")
+	std::cout
+		<< startoffset << ":" << endoffset << " @ "
+		<< tspelling  << "\n";
 
-        clang_disposeString(tokspell);
+	clang_disposeString(tokspell);
     }
 
     std::cout << "\n" << end_pattern << "\n";
@@ -290,20 +297,20 @@ std::vector<char> ReparseSource()
     auto buffer_ins = std::back_inserter(buffer);
 
     while(1) {
-        if (!std::getline(std::cin, input))
-            return buffer;
+	if (!std::getline(std::cin, input))
+	    return buffer;
 
-        if (input == end_pattern)
-            break;
+	if (input == end_pattern)
+	    break;
 
-        std::copy(input.begin(), input.end(),
-                  buffer_ins);
-        *buffer_ins++ = '\n';
+	std::copy(input.begin(), input.end(),
+		  buffer_ins);
+	*buffer_ins++ = '\n';
     }
 
     //*buffer_ins++ = '\0';
     std::cout << "Leaving Reparse Source w/buffer size: "
-              << buffer.size();
+	      << buffer.size();
     return buffer;
 }
 
@@ -313,33 +320,33 @@ struct ArgList
     std::unique_ptr<const char *> c_args;
 
     ArgList(int argc, char **argv)
-            : args(argv, argv+argc), c_args(new const char *[argc])
+	    : args(argv, argv+argc), c_args(new const char *[argc])
     { build_c_args(); }
 
     ArgList(std::vector<std::string> vargs)
-            : args(vargs), c_args(new const char *[ args.size() ])
+	    : args(vargs), c_args(new const char *[ args.size() ])
     { build_c_args(); }
 
     void build_c_args()
     {
-        auto i = 0u;
+	auto i = 0u;
 
-        if (DEBUG) {
-            std::cout << __PRETTY_FUNCTION__ << "\n\t";
-            std::cout << "args size " << args.size() << "\n\t";
-        }
-        for (auto s : args) {
-            std::cout << s << " ";
-        }
-        std::cout << std::endl;
+	if (DEBUG) {
+	    std::cout << __PRETTY_FUNCTION__ << "\n\t";
+	    std::cout << "args size " << args.size() << "\n\t";
+	}
+	for (auto s : args) {
+	    std::cout << s << " ";
+	}
+	std::cout << std::endl;
 
-        for (auto &s : args)
-            (c_args.get())[ i++ ] = s.c_str();
+	for (auto &s : args)
+	    (c_args.get())[ i++ ] = s.c_str();
     }
 
     operator const char **()
     {
-        return c_args.get();
+	return c_args.get();
     }
 
     std::size_t count() const
@@ -378,12 +385,13 @@ struct TUnit
         orig_argv = argv;
         if (DEBUG) {
             std::cout << __PRETTY_FUNCTION__
-                      << "\n\t"<< "argc: " << argc;
+                      << "\n\t"<< "argc: " << argc << "\n";
         }
+        std::cout << "[";
         for (auto i = 0; i < argc; ++i) {
-            std::cout << argv[i] << " ";
+            std::cout << argv[i] << ",";
         }
-        std::cout << "\n";
+        std::cout << "]\n";
 
         unit = clang_parseTranslationUnit(index,
                                           filename.c_str(),
@@ -425,55 +433,67 @@ int main(int argc, char *argv[])
     std::vector<std::string> default_args = { {"-x"}, {"c++"}, {"-std=c++11"} };
     std::string filename;
     ArgList arglist(default_args);
+    std::vector<std::string> vargs;
+
+    std::string clang_opts;
 
     if (DEBUG) {
-        std::cout << __PRETTY_FUNCTION__
-                  << "\n\t" << "parameters: argc=" << argc;
-        for (int i = 0; i < argc; i++) {
-            std::cout << "\n\t" << "argv[" << i << "] = " << argv[i];
-        }
-        std::cout << "\n";
+	std::cout << __PRETTY_FUNCTION__
+		  << "\n\t" << "parameters: argc=" << argc;
+	for (int i = 0; i < argc; i++) {
+	    std::cout << "\n\t" << "argv[" << i << "] = " << argv[i];
+	}
+	std::cout << "\n";
     }
-    if (argc > 1) {
-        /* Initialize arglist with cmdline args
-         * excluding program name and filename */
-        arglist = ArgList(argc - 2, argv + 1);
-        /* The final one is the file name */
-        filename = argv[argc - 1];
-    } else {
-        filename = argv[1];
+
+    std::tie(filename, clang_opts) = parse_helper(argc, argv);
+
+    // split argument string into separate arguments
+    if (clang_opts != "") {
+        arglist = ArgList(split_args(clang_opts));
+        // FIXME free?
     }
+
+    // if (argc > 1) {
+    //     /* Initialize arglist with cmdline args
+    //      * excluding program name and filename */
+    //     arglist = ArgList(argc - 2, argv + 1);
+    //     /* The final one is the file name */
+    //     filename = argv[argc - 1];
+    // } else {
+    //     filename = argv[1];
+    // }
 
     TUnit tu(index, filename);
 
     // Parse the file for the first time
     if (!tu.parse(arglist.count(), arglist)) {
-        std::cout << "Translation Unit Initial Parse Failed!\n";
+	std::cout << "Translation Unit Initial Parse Failed!\n";
     }
 
     std::string input;
     std::vector<char> filebuffer;
     while(std::getline(std::cin, input)) {
-        if (input == "REPARSE") {
-            if (DEBUG) {
-                std::cout << __PRETTY_FUNCTION__ << "\n\t" << "REPARSE\n";
-            }
-            filebuffer = ReparseSource();
+	if (input == "REPARSE") {
+	    if (DEBUG) {
+		std::cout << __PRETTY_FUNCTION__ << "\n\t" << "REPARSE\n";
+	    }
+	    filebuffer = ReparseSource();
 
-            CXUnsavedFile unsaved_file = { filename.c_str(),
-                                           filebuffer.data(),
-                                           filebuffer.size() };
+	    CXUnsavedFile unsaved_file = { filename.c_str(),
+					   filebuffer.data(),
+					   filebuffer.size() };
 
-            // std::cout << "Size = " << filebuffer.size()
-            //          << "Contents:\n" << filebuffer.data()
-            //          << "\n";
+	    // std::cout << "Size = " << filebuffer.size()
+	    //          << "Contents:\n" << filebuffer.data()
+	    //          << "\n";
 
-            if (tu.parse(std::vector<CXUnsavedFile>(1, unsaved_file))) {
-                TokenizeSource(tu.handle());
-            } else {
-                std::cout << "Reparse FAILED!\n" << end_pattern << "\n";
-            }
-        }
+	    if (tu.parse(std::vector<CXUnsavedFile>(1, unsaved_file))) {
+		TokenizeSource(tu.handle());
+	    } else {
+		std::cout << "Reparse FAILED!\n" << end_pattern << "\n";
+	    }
+	}
     }
 
     clang_disposeIndex(index);
