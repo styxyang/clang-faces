@@ -436,6 +436,7 @@ int main(int argc, char *argv[])
     std::vector<std::string> vargs;
 
     std::string clang_opts;
+    bool once = false;
 
     if (DEBUG) {
 	std::cout << __PRETTY_FUNCTION__
@@ -446,7 +447,7 @@ int main(int argc, char *argv[])
 	std::cout << "\n";
     }
 
-    std::tie(filename, clang_opts) = parse_helper(argc, argv);
+    std::tie(filename, clang_opts, once) = parse_helper(argc, argv);
 
     // split argument string into separate arguments
     if (clang_opts != "") {
@@ -469,6 +470,10 @@ int main(int argc, char *argv[])
     // Parse the file for the first time
     if (!tu.parse(arglist.count(), arglist)) {
 	std::cout << "Translation Unit Initial Parse Failed!\n";
+    }
+
+    if (once) {
+	exit(0);
     }
 
     std::string input;

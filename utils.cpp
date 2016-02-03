@@ -25,17 +25,22 @@ std::vector<std::string>& split_args(std::string args)
     return *(new std::vector<std::string>(head, tail));
 }
 
-std::tuple<std::string, std::string> parse_helper(int argc, char *argv[])
+// This parse_helper generate a tuple as return value
+// using getopt
+std::tuple<std::string, std::string, bool> parse_helper(int argc, char *argv[])
 {
     int c, opt_idx;
     std::string filename, rest;
+    bool once = false;
 
     // opterr = 0;
     struct option opts[] = {
-        { "clang-opts", required_argument, NULL, 'c' },
-        { "help", required_argument, NULL, 'h' },
-        { NULL, 0, NULL, 0 }
+	{ "clang-opts", required_argument, NULL, 'c' }, /* arguments for libclang */
+	{ "help", required_argument, NULL, 'h' }, /* print help info */
+	{ "once", no_argument /* optional_argument */, NULL, 'd' },
+	{ NULL, 0, NULL, 0 }
     };
+
     while ((c = getopt_long(argc, argv, "", opts, &opt_idx)) != -1) {
         switch (c) {
             case 'c':
@@ -45,6 +50,9 @@ std::tuple<std::string, std::string> parse_helper(int argc, char *argv[])
             //     std::cout << "unknown: " << optopt << "\n";
             //     vargs.push_back(std::string(optarg));
             //     break;
+	    case 'd':
+		once = true;
+		break;
             case 'h':
             default:
                 usage();
@@ -62,5 +70,5 @@ std::tuple<std::string, std::string> parse_helper(int argc, char *argv[])
         ::printf("filename: %s\n", filename.c_str());
     }
 
-    return std::tuple<std::string,std::string>(filename, rest);
+    return std::tuple<std::string,std::string, bool>(filename, rest, once);
 }
