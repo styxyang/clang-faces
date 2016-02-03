@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
     ArgList arglist(default_args);
     std::vector<std::string> vargs;
 
-    std::string clang_opts;
+    std::string libclang_args;
     bool once = false;
 
     if (DEBUG) {
@@ -447,11 +447,11 @@ int main(int argc, char *argv[])
 	std::cout << "\n";
     }
 
-    std::tie(filename, clang_opts, once) = parse_helper(argc, argv);
+    std::tie(filename, libclang_args, once) = parse_helper(argc, argv);
 
     // split argument string into separate arguments
-    if (clang_opts != "") {
-        arglist = ArgList(split_args(clang_opts));
+    if (libclang_args != "") {
+        arglist = ArgList(split_args(libclang_args));
         // FIXME free?
     }
 
@@ -473,6 +473,7 @@ int main(int argc, char *argv[])
     }
 
     if (once) {
+	// specified in cmd switch, parse once and exit
 	exit(0);
     }
 

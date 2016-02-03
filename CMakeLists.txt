@@ -41,6 +41,8 @@ include_directories(
 
 message(STATUS "LLVM LIB DIR: ${LLVM_LIBRARY_DIRS}")
 
+add_definitions(${LLVM_CFLAGS} -Wall -std=c++11)
+
 link_directories( 
   ${LLVM_LIBRARY_DIRS}
   ${CLANG_LIBRARY_LIBS}
@@ -53,23 +55,11 @@ target_link_libraries( ${PROJECT_NAME}
   ${CLANG_LIBS} 
   )
 
-add_definitions(
-  ${LLVM_CFLAGS}
-  -Wall
-  -std=c++11
-  )
-
 add_executable(sniper sniper.cpp)
 
 target_link_libraries( sniper
   ${LLVM_LIBNAMES}
   ${CLANG_LIBS} 
-  )
-
-add_definitions(
-  ${LLVM_CFLAGS}
-  -Wall
-  -std=c++11
   )
 
 INSTALL( TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX} )
